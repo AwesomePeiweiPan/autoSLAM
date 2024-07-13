@@ -17,7 +17,9 @@ add_definitions("-DCATKIN_ENABLE_TESTING=0")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin) #可执行文件的输出放在当前的bin
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib) #动态库文件输出设置 为项目根目录下的 lib 目录 
+                                                              #.so文件，动态链接，关心路径，小心依赖冲突
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib) #静态库文件输出设置 为项目根目录下的 lib 目录
+                                                              #.lib, .a文件，已经被预编译，每个都有副本，不关心路径
 
 #看系统了
 option(BUILD_WITH_UBUNTU1804 OFF)
