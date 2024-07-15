@@ -11,13 +11,13 @@
 #include "tools/ui/pangolin_window.h"
 #include "utm_convert.h"
 
-DEFINE_string(txt_path, "./data/ch3/10.txt", "数据文件路径");
+DEFINE_string(txt_path, "/home/peiweipan/Projects/autoSLAM/data/ch3/10.txt", "数据文件路径");
 
 // 以下参数仅针对本书提供的数据
 DEFINE_double(antenna_angle, 12.06, "RTK天线安装偏角（角度）");
 DEFINE_double(antenna_pox_x, -0.17, "RTK天线安装偏移X");
 DEFINE_double(antenna_pox_y, -0.20, "RTK天线安装偏移Y");
-DEFINE_bool(with_ui, true, "是否显示图形界面");
+DEFINE_bool(with_ui, false, "是否显示图形界面");
 
 /**
  * 本程序演示如何处理GNSS数据
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
     sad::TxtIO io(fLS::FLAGS_txt_path);
 
-    std::ofstream fout("./data/ch3/gnss_output.txt");
+    std::ofstream fout("/home/peiweipan/Projects/autoSLAM/data/ch3/gnss_output.txt");
     Vec2d antenna_pos(FLAGS_antenna_pox_x, FLAGS_antenna_pox_y);
 
     auto save_result = [](std::ofstream& fout, double timestamp, const SE3& pose) {
