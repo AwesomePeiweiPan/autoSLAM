@@ -33,6 +33,7 @@ namespace sad {
  */
 class TxtIO {
    public:
+    // std:ifstream fin 输入文件流对象，用于读取文件内容
     TxtIO(const std::string &file_path) : fin(file_path) {}
 
     /// 定义回调函数
@@ -40,8 +41,8 @@ class TxtIO {
     using OdomProcessFuncType = std::function<void(const Odom &)>;
     using GNSSProcessFuncType = std::function<void(const GNSS &)>;
 
-    TxtIO &SetIMUProcessFunc(IMUProcessFuncType imu_proc) {
-        imu_proc_ = std::move(imu_proc);
+    TxtIO &SetIMUProcessFunc(IMUProcessFuncType imu_proc) {  //参数为左值引用
+        imu_proc_ = std::move(imu_proc);                     //左值引用转换为右值引用
         return *this;
     }
 

@@ -9,8 +9,8 @@
 #include "common/io_utils.h"
 #include "tools/ui/pangolin_window.h"
 
-DEFINE_string(imu_txt_path, "./data/ch3/10.txt", "数据文件路径");
-DEFINE_bool(with_ui, true, "是否显示图形界面");
+DEFINE_string(imu_txt_path, "/home/peiweipan/Projects/autoSLAM/data/ch3/10.txt", "数据文件路径");
+DEFINE_bool(with_ui, false, "是否显示图形界面");
 
 /// 本程序演示如何对IMU进行直接积分
 /// 该程序需要输入data/ch3/下的文本文件，同时它将状态输出到data/ch3/state.txt中，在UI中也可以观察到车辆运动
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
         fout << std::endl;
     };
 
-    std::ofstream fout("./data/ch3/state.txt");
+    std::ofstream fout("/home/peiweipan/Projects/autoSLAM/data/ch3/state.txt");
     io.SetIMUProcessFunc([&imu_integ, &save_result, &fout, &ui](const sad::IMU& imu) {
           imu_integ.AddIMU(imu);
           save_result(fout, imu.timestamp_, imu_integ.GetR(), imu_integ.GetV(), imu_integ.GetP());
