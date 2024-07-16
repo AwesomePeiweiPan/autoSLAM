@@ -73,7 +73,7 @@ bool StaticIMUInit::TryInit() {
     LOG(INFO) << "mean acce: " << mean_acce.transpose();
     gravity_ = -mean_acce / mean_acce.norm() * options_.gravity_norm_;
 
-    // 重新计算加计的协方差
+    // 重新计算加计的协方差,这里就知道为什么要用this了，因为捕获了gravity_
     math::ComputeMeanAndCovDiag(init_imu_deque_, mean_acce, cov_acce_,
                                 [this](const IMU& imu) { return imu.acce_ + gravity_; });
 

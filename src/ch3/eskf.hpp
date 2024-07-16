@@ -137,19 +137,19 @@ class ESKF {
         double eg = options.bias_gyro_var_;
         double ea = options.bias_acce_var_;
 
-        double ev2 = ev;  // * ev;
-        double et2 = et;  // * et;
-        double eg2 = eg;  // * eg;
-        double ea2 = ea;  // * ea;
+        double ev2 = ev;  // * ev; 加速度计 噪声 方差
+        double et2 = et;  // * et; 陀螺仪计 噪声 方差
+        double eg2 = eg;  // * eg; 陀螺仪计 偏置 方差
+        double ea2 = ea;  // * ea; 陀螺仪计 偏置 方差
 
-        // 设置过程噪声
+        // 设置过程噪声  公式(3.45) 页面P78
         Q_.diagonal() << 0, 0, 0, ev2, ev2, ev2, et2, et2, et2, eg2, eg2, eg2, ea2, ea2, ea2, 0, 0, 0;
 
         // 设置里程计噪声
         double o2 = options_.odom_var_ * options_.odom_var_;
         odom_noise_.diagonal() << o2, o2, o2;
 
-        // 设置GNSS状态
+        // 设置GNSS状态 位置 高度 角度 方差噪声矩阵
         double gp2 = options.gnss_pos_noise_ * options.gnss_pos_noise_;
         double gh2 = options.gnss_height_noise_ * options.gnss_height_noise_;
         double ga2 = options.gnss_ang_noise_ * options.gnss_ang_noise_;
@@ -286,8 +286,8 @@ bool ESKF<S>::ObserveWheelSpeed(const Odom& odom) {
 
 template <typename S>
 bool ESKF<S>::ObserveGps(const GNSS& gnss) {
-    /// GNSS 观测的修正
-    assert(gnss.unix_time_ >= current_time_);
+    /// GNSS 观测的修正；
+    assert(gnss.unix_time_ >= current_time_);       // 如果不符合这个条件，在 调试 的时候会报错。但是可以使用 NDEBUG 宏 来禁用
 
     if (first_gnss_) {
         R_ = gnss.utm_pose_.so3();

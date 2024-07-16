@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(slam_in_auto_driving)
 
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CXX_STANDARD 17)                                      #C++的标准为C++17
 set(CMAKE_CXX_FLAGS "-w")                                       #编译器抑制所有的警告
 
@@ -9,8 +9,11 @@ set(CMAKE_CXX_FLAGS "-w")                                       #编译器抑制
 #-g :告诉编译器生成调试信息，即使在release模式下，也可以在调试器中查看源代码
 #-ggbd :-g的扩展版本，编译器生成更多的信息，特别是对gdb优化的调试信息
 # ${CMAKE_CXX_FLAGS}: 包含其他通用的编译选项，如果其他地方设置了全局的编译选项，也会被包含在这里
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -ggdb ${CMAKE_CXX_FLAGS}")  
-set(CMAKE_CXX_FLAGS_DEBUG "-g ${CMAKE_CXX_FLAGS}")
+
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -ggdb ${CMAKE_CXX_FLAGS}")  
+#set(CMAKE_CXX_FLAGS_DEBUG "-g ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
+
 
 #禁用catkin测试功能: 这个功能是使用Catkin构建系统来进行自动化测试，确保ROS包和节点的正确性
 add_definitions("-DCATKIN_ENABLE_TESTING=0")
@@ -31,3 +34,10 @@ include_directories(${PROJECT_SOURCE_DIR})     # 添加 根目录 作为 头文�
 include_directories(${PROJECT_SOURCE_DIR}/build/devel/include)  # 添加 此目录 作为 头文件的搜索目录中
 
 add_subdirectory(src) #添加 src 目录到子目录构建系统中，CMake将处理 src 下的 CMakeList文件，并构建项目
+
+#首次编译会缓存编译结果，下次编译的时候检查缓存并且返回缓存的结果，从而加快编译过程
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+endif()
