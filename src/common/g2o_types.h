@@ -23,17 +23,17 @@ namespace sad {
 /**
  * 旋转在前的SO3+t类型pose，6自由度，存储时伪装为g2o::VertexSE3，供g2o_viewer查看
  */
-class VertexPose : public g2o::BaseVertex<6, SE3> {
+class VertexPose : public g2o::BaseVertex<6, SE3> {        //继承自 BaseVertex 模版类，自定义的类型
    public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     VertexPose() {}
 
-    bool read(std::istream& is) override {
+    bool read(std::istream& is) override {  //read 虚函数被重写
         double data[7];
         for (int i = 0; i < 7; i++) {
             is >> data[i];
         }
-        setEstimate(SE3(Quatd(data[6], data[3], data[4], data[5]), Vec3d(data[0], data[1], data[2])));
+        setEstimate(SE3(Quatd(data[6], data[3], data[4], data[5]), Vec3d(data[0], data[1], data[2]))); //说明定点包括旋转，平移，并且旋转在前
         return true;
     }
 
@@ -46,12 +46,12 @@ class VertexPose : public g2o::BaseVertex<6, SE3> {
         return true;
     }
 
-    virtual void setToOriginImpl() {}
+    virtual void setToOriginImpl() {} //设定被优化顶点的初始值
 
-    virtual void oplusImpl(const double* update_) {
-        _estimate.so3() = _estimate.so3() * SO3::exp(Eigen::Map<const Vec3d>(&update_[0]));  // 旋转部分
-        _estimate.translation() += Eigen::Map<const Vec3d>(&update_[3]);                     // 平移部分
-        updateCache();
+    virtual void oplusImpl(const double* update_) {  //顶点的更新函数
+        _estimate.so3() = _estimate.so3() * SO3::exp(Eigen::Map<const Vec3d>(&update_[0]));  // 旋转部分：这里的Map为映射函数避免不必要复制；
+        _estimate.translation() += Eigen::Map<const Vec3d>(&update_[3]);                     // 平移部分：由于Vec3d已经指明了容量，因此可以只给开头
+        updateCache();     //更新缓存数据，使得计算效率更高
     }
 };
 
@@ -68,11 +68,11 @@ class VertexVelocity : public g2o::BaseVertex<3, Vec3d> {
 
     virtual void setToOriginImpl() { _estimate.setZero(); }
 
-    virtual void oplusImpl(const double* update_) { _estimate += Eigen::Map<const Vec3d>(update_); }
+    virtual void oplusImpl(const double* update_) { _estimate += Eigen::Map<const Vec3d>(update_); }  //上面是要update的部分，因此使用引用&，这里是使用完全的update
 };
 
 /**
- * 陀螺零偏顶点，亦为Vec3d，从速度顶点继承
+ * 陀螺零偏顶点，亦为Vec3d，从速度顶点继承。这是因为初始值和更新方式 和 速度顶点 完全一样
  */
 class VertexGyroBias : public VertexVelocity {
    public:
@@ -81,7 +81,7 @@ class VertexGyroBias : public VertexVelocity {
 };
 
 /**
- * 加计零偏顶点，Vec3d，亦从速度顶点继承
+ * 加计零偏顶点，Vec3d，亦从速度顶点继承。这是因为初始值和更新方式 和 速度顶点 完全一样
  */
 class VertexAccBias : public VertexVelocity {
    public:
@@ -92,6 +92,8 @@ class VertexAccBias : public VertexVelocity {
 /**
  * 陀螺随机游走
  */
+//连接两个时刻的零偏状态
+//代表陀螺仪偏执的二元边：连接两个陀螺仪偏置顶点，误差是三维的，因此这里使用的 Vec3d
 class EdgeGyroRW : public g2o::BaseBinaryEdge<3, Vec3d, VertexGyroBias, VertexGyroBias> {
    public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -102,16 +104,23 @@ class EdgeGyroRW : public g2o::BaseBinaryEdge<3, Vec3d, VertexGyroBias, VertexGy
     virtual bool write(std::ostream& os) const { return false; }
 
     void computeError() {
+        // dynamic_cast 类型转换操作符，用于将基类指针/基类引用 转换为 派生类的 指针/引用
+        // 但这样的转换必须有效，否则 VG1 被设置为 nullprt. 
+        // _vertices被定义在 hyper_graph 中，这是一个祖宗类，因此可以转换
         const auto* VG1 = dynamic_cast<const VertexGyroBias*>(_vertices[0]);
         const auto* VG2 = dynamic_cast<const VertexGyroBias*>(_vertices[1]);
         _error = VG2->estimate() - VG1->estimate();
     }
 
+    //增量计算函数：误差对优化变量的导数
+    //看来是 j - i 的 的偏置计算
     virtual void linearizeOplus() {
         _jacobianOplusXi = -Mat3d::Identity();
         _jacobianOplusXj.setIdentity();
     }
 
+    //最终的 Jacobian矩阵，是一个 6x6 的矩阵
+    //J矩阵是一个 3x6 的矩阵，左边为关于 i 的Jacobian，右边是关于 j 的Jacobian
     Eigen::Matrix<double, 6, 6> GetHessian() {
         linearizeOplus();
         Eigen::Matrix<double, 3, 6> J;
@@ -122,7 +131,7 @@ class EdgeGyroRW : public g2o::BaseBinaryEdge<3, Vec3d, VertexGyroBias, VertexGy
 };
 
 /**
- * 加计随机游走
+ * 加计随机游走，与上面的gyro的计算完全相同
  */
 class EdgeAccRW : public g2o::BaseBinaryEdge<3, Vec3d, VertexAccBias, VertexAccBias> {
    public:
@@ -149,6 +158,7 @@ class EdgeAccRW : public g2o::BaseBinaryEdge<3, Vec3d, VertexAccBias, VertexAccB
         Eigen::Matrix<double, 3, 6> J;
         J.block<3, 3>(0, 0) = _jacobianOplusXi;
         J.block<3, 3>(0, 3) = _jacobianOplusXj;
+        //information()中的信息矩阵也许在g2o库里已经被定义了，因此没有指定
         return J.transpose() * information() * J;
     }
 };
@@ -168,12 +178,13 @@ class EdgePriorPoseNavState : public g2o::BaseMultiEdge<15, Vec15d> {
     virtual bool read(std::istream& is) { return false; }
     virtual bool write(std::ostream& os) const { return false; }
 
-    void computeError();
-    virtual void linearizeOplus();
+    void computeError();             //g2o_types.cc重新定义
+    virtual void linearizeOplus();   //g2o_types.cc重新定义
 
     Eigen::Matrix<double, 15, 15> GetHessian() {
         linearizeOplus();
         Eigen::Matrix<double, 15, 15> J;
+        //g2o约定：_jacobianOplus的维数为 误差向量的维数 ✖️ 顶点的维数
         J.block<15, 6>(0, 0) = _jacobianOplus[0];
         J.block<15, 3>(0, 6) = _jacobianOplus[1];
         J.block<15, 3>(0, 9) = _jacobianOplus[2];
@@ -198,7 +209,8 @@ class EdgeGNSS : public g2o::BaseUnaryEdge<6, SE3, VertexPose> {
     }
 
     void computeError() override {
-        VertexPose* v = (VertexPose*)_vertices[0];
+        VertexPose* v = (VertexPose*)_vertices[0];      //C风格的强制类型转换，如果通过则没问题，如果_vertices[0]不是VertexPose*则会出现未定义的行为
+        //_error是一个Eigen向量，Eigen是一个模版库。这些提供了对前三个元素或者后三个元素的引用；
         _error.head<3>() = (_measurement.so3().inverse() * v->estimate().so3()).log();
         _error.tail<3>() = v->estimate().translation() - _measurement.translation();
     };

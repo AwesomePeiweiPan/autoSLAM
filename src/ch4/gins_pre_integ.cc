@@ -17,32 +17,46 @@ namespace sad {
 
 void GinsPreInteg::AddImu(const IMU& imu) {
     if (first_gnss_received_ && first_imu_received_) {
+        //imu预积分，里面计算了预积分delta三项，噪声更新矩阵，偏置更新矩阵
         pre_integ_->Integrate(imu, imu.timestamp_ - last_imu_.timestamp_);
     }
 
+    //更新数据
     first_imu_received_ = true;
     last_imu_ = imu;
     current_time_ = imu.timestamp_;
 }
 
+//这个函数用来定义所有相关的信息矩阵
 void GinsPreInteg::SetOptions(sad::GinsPreInteg::Options options) {
+    //偏置的 信息矩阵:每个信息矩阵3x3，内容为测得的 偏置方差的倒数
     double bg_rw2 = 1.0 / (options_.bias_gyro_var_ * options_.bias_gyro_var_);
     options_.bg_rw_info_.diagonal() << bg_rw2, bg_rw2, bg_rw2;
     double ba_rw2 = 1.0 / (options_.bias_acce_var_ * options_.bias_acce_var_);
     options_.ba_rw_info_.diagonal() << ba_rw2, ba_rw2, ba_rw2;
 
+    //GNSS的 信息矩阵:每个信息矩阵为 6x6，内容为三个角度的，两个水平方向的，一个竖直方向的
     double gp2 = options_.gnss_pos_noise_ * options_.gnss_pos_noise_;
     double gh2 = options_.gnss_height_noise_ * options_.gnss_height_noise_;
     double ga2 = options_.gnss_ang_noise_ * options_.gnss_ang_noise_;
-
     options_.gnss_info_.diagonal() << 1.0 / ga2, 1.0 / ga2, 1.0 / ga2, 1.0 / gp2, 1.0 / gp2, 1.0 / gh2;
-    pre_integ_ = std::make_shared<IMUPreintegration>(options_.preinteg_options_);
+   
+    //创建了一个指向 IMUPreintegration 对象的共享指针，并且options初始化了
+            //这个options是 IMUPreintegration::Options,
+            //里面定义了：两个初始偏置零偏 + 陀螺噪声的标准差
+    //make_shared:共享指针是一种智能指针，自动管理对象的生命周期，当最后一个指向该对象的共享指针被销毁时，对象也会被销毁
+            //直接创建了一个IMUPreintegration的对象，并且返回一个指向该对象的指针，可以避免单独调用new
+            //在内存分配和对象构造的方面有一定的优势
+    pre_integ_ = std::make_shared<IMUPreintegration>(options.preinteg_options_);
 
+    //Odemetry的 信息矩阵：3x3
     double o2 = 1.0 / (options_.odom_var_ * options_.odom_var_);
     options_.odom_info_.diagonal() << o2, o2, o2;
 
+    //当前时刻的先验信息矩阵 15x15,初始化的时候被设定为100，这里的v,bg,ba被设定为1000000
     prior_info_.block<6, 6>(9, 9) = Mat6d ::Identity() * 1e6;
 
+    //当前时刻状态，初始化的时候被设定为 nullptr
     if (this_frame_) {
         this_frame_->bg_ = options_.preinteg_options_.init_bg_;
         this_frame_->ba_ = options_.preinteg_options_.init_ba_;
@@ -50,7 +64,9 @@ void GinsPreInteg::SetOptions(sad::GinsPreInteg::Options options) {
 }
 
 void GinsPreInteg::AddGnss(const GNSS& gnss) {
+    //NavStated对象创建的时候被隐式调用
     this_frame_ = std::make_shared<NavStated>(current_time_);
+    //this_gnss_本来就是一个GNSS对象
     this_gnss_ = gnss;
 
     if (!first_gnss_received_) {
@@ -72,19 +88,23 @@ void GinsPreInteg::AddGnss(const GNSS& gnss) {
         last_frame_ = this_frame_;
         last_gnss_ = this_gnss_;
         first_gnss_received_ = true;
-        current_time_ = gnss.unix_time_;
+        current_time_ = gnss.unix_time_;    //unix系统时间
         return;
     }
 
-    // 积分到GNSS时刻
+    // 积分到GNSS时刻。使用的积分为预积分，里面计算了预积分delta三项，噪声更新矩阵，偏置更新矩阵
     pre_integ_->Integrate(last_imu_, gnss.unix_time_ - current_time_);
 
+    //更新时间
     current_time_ = gnss.unix_time_;
+    //这里面的预测为：使用预积分得到的delta三项，简单加上初值，进行递推，并且将递推结果赋值给state,也就是这里的*this_frame
     *this_frame_ = pre_integ_->Predict(*last_frame_, options_.gravity_);
 
     Optimize();
 
+    //更新帧
     last_frame_ = this_frame_;
+    //更新GNSS信号
     last_gnss_ = this_gnss_;
 }
 
@@ -99,14 +119,25 @@ void GinsPreInteg::Optimize() {
         return;
     }
 
-    using BlockSolverType = g2o::BlockSolverX;
-    using LinearSolverType = g2o::LinearSolverEigen<BlockSolverType::PoseMatrixType>;
 
+    //第一步：定义了一个块求解器类型，这里用的是BlockSolverX，这是一个通用的块求解器
+    using BlockSolverType = g2o::BlockSolverX;  
+    
+    //第二步：创建一个线性求解器
+    using LinearSolverType = g2o::LinearSolverEigen<BlockSolverType::PoseMatrixType>;  
+
+    //第三步：创建了一个Levenberg-Marquardt算法的优化求解器对象 solver
+        //OptimizationAlgorithmLevenberg 是一种优化算法
+        //make_unique 是一种安全的动态内存分配方式，分配给了 BlockSolverType 对象 和 LinearSolverType 对象，并且传递给 solver
+                    //不需要显式的使用new关键字，如果new构造函数有异常则内存不会正确释放，导致内存泄漏，但是make_unique可以自动释放在异常的时候
     auto* solver = new g2o::OptimizationAlgorithmLevenberg(
         g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
-    g2o::SparseOptimizer optimizer;
-    optimizer.setAlgorithm(solver);
 
+    //第四步：创建稀疏化求解器
+    g2o::SparseOptimizer optimizer; //创建优化器
+    optimizer.setAlgorithm(solver); //用前面定义好的求解器作为求解方法
+
+    //第五步：定义图的顶点并添加到优化器中
     // 上时刻顶点， pose, v, bg, ba
     auto v0_pose = new VertexPose();
     v0_pose->setId(0);
@@ -149,6 +180,7 @@ void GinsPreInteg::Optimize() {
     v1_ba->setEstimate(this_frame_->ba_);
     optimizer.addVertex(v1_ba);
 
+    //第六步：定义图的边并添加到优化器中
     // 预积分边
     auto edge_inertial = new EdgeInertial(pre_integ_, options_.gravity_);
     edge_inertial->setVertex(0, v0_pose);
@@ -157,9 +189,11 @@ void GinsPreInteg::Optimize() {
     edge_inertial->setVertex(3, v0_ba);
     edge_inertial->setVertex(4, v1_pose);
     edge_inertial->setVertex(5, v1_vel);
-    auto* rk = new g2o::RobustKernelHuber();
-    rk->setDelta(200.0);
-    edge_inertial->setRobustKernel(rk);
+    //Huber核函数是一种常用的鲁棒核函数，可以在处理异常的时候平滑的过度，从而减少异常值对优化结果的影响
+    auto* rk = new g2o::RobustKernelHuber();//创建一个鲁棒核函数对象 rk
+    rk->setDelta(200.0);                    //这个参数决定了残差的阈值。残差小于delta则采用二次损失函数，否则采用线性损失函数
+                                                                  //平滑过度有效抑制大残差对优化的影响
+    edge_inertial->setRobustKernel(rk);     //设置rk为鲁棒核函数
     optimizer.addEdge(edge_inertial);
 
     // 两个零偏随机游走
@@ -214,12 +248,16 @@ void GinsPreInteg::Optimize() {
         last_odom_set_ = false;
     }
 
+    //在优化过程中，输出调试信息
     optimizer.setVerbose(options_.verbose_);
-    optimizer.initializeOptimization();
-    optimizer.optimize(20);
+
+    //第七步：设置优化参数并且开始执行优化
+    optimizer.initializeOptimization(); //初始化优化问题
+    optimizer.optimize(20); //设置迭代次数
 
     if (options_.verbose_) {
-        // 获取结果，统计各类误差
+        // 获取结果，统计各类误差；chi2表示误差项的二次型误差，也就是残差的平方和，用来衡量优化中某个边或误差项的拟合程度的一个指标。
+        //                     chi2越小，表示该边的误差项与实际越接近
         LOG(INFO) << "chi2/error: ";
         LOG(INFO) << "preintegration: " << edge_inertial->chi2() << "/" << edge_inertial->error().transpose();
         // LOG(INFO) << "gnss0: " << edge_gnss0->chi2() << ", " << edge_gnss0->error().transpose();

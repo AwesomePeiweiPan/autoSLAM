@@ -38,8 +38,8 @@ class GinsPreInteg {
         IMUPreintegration::Options preinteg_options_;
 
         // 噪声
-        double bias_gyro_var_ = 1e-6;           // 陀螺零偏游走标准差
-        double bias_acce_var_ = 1e-4;           // 加计零偏游走标准差
+        double bias_gyro_var_ = 1e-6;           // 陀螺零偏游走标准差，这个是需要给定初值的偏置
+        double bias_acce_var_ = 1e-4;           // 加计零偏游走标准差，这个是需要给定初值的偏置
         Mat3d bg_rw_info_ = Mat3d::Identity();  // 陀螺随机游走信息阵
         Mat3d ba_rw_info_ = Mat3d::Identity();  // 加计随机游走信息阵
 

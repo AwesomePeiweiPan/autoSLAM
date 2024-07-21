@@ -19,11 +19,11 @@
 #include <g2o/core/robust_kernel.h>
 #include <g2o/solvers/eigen/linear_solver_eigen.h>
 
-DEFINE_string(txt_path, "./data/ch3/10.txt", "数据文件路径");
+DEFINE_string(txt_path, "/home/peiweipan/Projects/autoSLAM/data/ch3/10.txt", "数据文件路径");
 DEFINE_double(antenna_angle, 12.06, "RTK天线安装偏角（角度）");
 DEFINE_double(antenna_pox_x, -0.17, "RTK天线安装偏移X");
 DEFINE_double(antenna_pox_y, -0.20, "RTK天线安装偏移Y");
-DEFINE_bool(with_ui, true, "是否显示图形界面");
+DEFINE_bool(with_ui, false, "是否显示图形界面");
 
 TEST(PREINTEGRATION_TEST, ROTATION_TEST) {
     // 测试在恒定角速度运转下的预积分情况
@@ -148,7 +148,7 @@ TEST(PREINTEGRATION_TEST, ESKF_TEST) {
     sad::TxtIO io(FLAGS_txt_path);
     Vec2d antenna_pos(FLAGS_antenna_pox_x, FLAGS_antenna_pox_y);
 
-    std::ofstream fout("./data/ch3/gins.txt");
+    std::ofstream fout("/home/peiweipan/Projects/autoSLAM/data/ch3/gins.txt");
     bool imu_inited = false, gnss_inited = false;
 
     /// 设置各类回调函数

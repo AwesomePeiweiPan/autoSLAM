@@ -6,7 +6,7 @@
 #include "common/g2o_types.h"
 
 namespace sad {
-
+//shared_ptr 智能指针，当最后一个智能指针被销毁时，所管理的对象会被自动删除；减少了手动管理动态内存的风险
 EdgeInertial::EdgeInertial(std::shared_ptr<IMUPreintegration> preinteg, const Vec3d& gravity, double weight)
     : preint_(preinteg), dt_(preinteg->dt_) {
     resize(6);  // 6个关联顶点
@@ -24,7 +24,8 @@ void EdgeInertial::computeError() {
 
     Vec3d bg = bg1->estimate();
     Vec3d ba = ba1->estimate();
-
+    
+    // 零偏的更新后 观测值的值 (4.32) 
     const SO3 dR = preint_->GetDeltaRotation(bg);
     const Vec3d dv = preint_->GetDeltaVelocity(bg, ba);
     const Vec3d dp = preint_->GetDeltaPosition(bg, ba);
@@ -106,30 +107,30 @@ void EdgeInertial::linearizeOplus() {
     // dp/dv1, 4.48c
     _jacobianOplus[1].block<3, 3>(6, 0) = -R1T.matrix() * dt_;
 
-    /// 残差对bg1
+    /// 残差对bg1, 9x3
     _jacobianOplus[2].setZero();
     // dR/dbg1, 4.45
     _jacobianOplus[2].block<3, 3>(0, 0) = -invJr * eR.inverse().matrix() * SO3::jr((dR_dbg * dbg).eval()) * dR_dbg;
-    // dv/dbg1
+    // dv/dbg1, -4.38c
     _jacobianOplus[2].block<3, 3>(3, 0) = -dv_dbg;
-    // dp/dbg1
+    // dp/dbg1  -4.38e
     _jacobianOplus[2].block<3, 3>(6, 0) = -dp_dbg;
 
-    /// 残差对ba1
+    /// 残差对ba1, 9x3
     _jacobianOplus[3].setZero();
-    // dv/dba1
+    // dv/dba1, -4.38b
     _jacobianOplus[3].block<3, 3>(3, 0) = -dv_dba;
-    // dp/dba1
+    // dp/dba1, -4.38d
     _jacobianOplus[3].block<3, 3>(6, 0) = -dp_dba;
 
-    /// 残差对pose2
+    /// 残差对pose2, 9x6
     _jacobianOplus[4].setZero();
     // dr/dr2, 4.43
     _jacobianOplus[4].block<3, 3>(0, 0) = invJr;
     // dp/dp2, 4.48b
     _jacobianOplus[4].block<3, 3>(6, 3) = R1T.matrix();
 
-    /// 残差对v2
+    /// 残差对v2, 9x3
     _jacobianOplus[5].setZero();
     // dv/dv2, 4,46b
     _jacobianOplus[5].block<3, 3>(3, 0) = R1T.matrix();  // OK

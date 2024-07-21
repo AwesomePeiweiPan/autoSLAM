@@ -20,11 +20,11 @@ namespace sad {
  */
 class IMUPreintegration {
    public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // 宏 为Eigen库的一部分，为了确保类的 内存分配 符合特定对齐要求
     /// 参数配置项
     /// 初始的零偏需要设置，其他可以不改
-    struct Options {
-        Options() {}
+    struct Options {                  
+        Options() {}                     // 结构体的默认构造函数，会使用下面的参数进行初始化
         Vec3d init_bg_ = Vec3d::Zero();  // 初始零偏
         Vec3d init_ba_ = Vec3d::Zero();  // 初始零偏
         double noise_gyro_ = 1e-2;       // 陀螺噪声，标准差

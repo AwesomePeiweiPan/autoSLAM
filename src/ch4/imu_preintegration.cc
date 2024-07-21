@@ -65,17 +65,17 @@ void IMUPreintegration::Integrate(const IMU &imu, double dt) {
     dt_ += dt;
 }
 
-SO3 IMUPreintegration::GetDeltaRotation(const Vec3d &bg) { return dR_ * SO3::exp(dR_dbg_ * (bg - bg_)); }
+SO3 IMUPreintegration::GetDeltaRotation(const Vec3d &bg) { return dR_ * SO3::exp(dR_dbg_ * (bg - bg_)); }  //(4.32)
 
 Vec3d IMUPreintegration::GetDeltaVelocity(const Vec3d &bg, const Vec3d &ba) {
-    return dv_ + dV_dbg_ * (bg - bg_) + dV_dba_ * (ba - ba_);
+    return dv_ + dV_dbg_ * (bg - bg_) + dV_dba_ * (ba - ba_);   //(4.32)
 }
 
 Vec3d IMUPreintegration::GetDeltaPosition(const Vec3d &bg, const Vec3d &ba) {
-    return dp_ + dP_dbg_ * (bg - bg_) + dP_dba_ * (ba - ba_);
+    return dp_ + dP_dbg_ * (bg - bg_) + dP_dba_ * (ba - ba_);   //(4.32)
 }
 
-NavStated IMUPreintegration::Predict(const sad::NavStated &start, const Vec3d &grav) const {
+NavStated IMUPreintegration::Predict(const sad::NavStated &start, const Vec3d &grav) const {      //(4.7 a-d)的变体，需要做变换
     SO3 Rj = start.R_ * dR_;
     Vec3d vj = start.R_ * dv_ + start.v_ + grav * dt_;
     Vec3d pj = start.R_ * dp_ + start.p_ + start.v_ * dt_ + 0.5f * grav * dt_ * dt_;
