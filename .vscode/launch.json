@@ -1,0 +1,129 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ch2 debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/peiweipan/Projects/autoSLAM/bin/motion",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "/home/peiweipan/Projects/autoSLAM/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true                    
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "ch3 run imu integration",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/peiweipan/Projects/autoSLAM/bin/run_imu_integration",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "/home/peiweipan/Projects/autoSLAM/src/ch3",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true                    
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "ch3 process gnss",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/peiweipan/Projects/autoSLAM/bin/process_gnss",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "/home/peiweipan/Projects/autoSLAM/src/ch3",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true                    
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "ch3 run eskf gins",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/peiweipan/Projects/autoSLAM/bin/run_eskf_gins",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "/home/peiweipan/Projects/autoSLAM/src/ch3",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true                    
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "ch4 test pre-integration",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/peiweipan/Projects/autoSLAM/bin/test_preintegration",
+            "args": ["--gtest_filter=PREINTEGRATION_TEST.ESKF_TEST"],
+            "stopAtEntry": false,
+            "cwd": "/home/peiweipan/Projects/autoSLAM/src/ch4",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true                    
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "ch4 run gins pre integ",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/peiweipan/Projects/autoSLAM/bin/run_gins_pre_integ",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "/home/peiweipan/Projects/autoSLAM/src/ch4",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true                    
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+
+    ]
+}

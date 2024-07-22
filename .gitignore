@@ -61,6 +61,4 @@ data/ch4/gins_preintg.txt
 /thirdparty/*
 /lib/*
 /docker/*
-/Dockerfile
-/.vscode/*
 .gitignore
